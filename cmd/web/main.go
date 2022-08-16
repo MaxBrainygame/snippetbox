@@ -4,15 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/julienschmidt/httprouter"
-	"github.com/spf13/viper"
 )
-
-type Config struct {
-	port        string
-	staticfiles string
-}
 
 type application struct {
 	errorLog *log.Logger
@@ -35,29 +27,12 @@ func main() {
 		infoLog:  infoLog,
 	}
 
-	viper.SetConfigName("config")
-	viper.AddConfigPath("$Home/Projects/snippetbox")
-	err = viper.ReadInConfig()
-	if err != nil {
-		errorLog.Fatal("fatal error config file: %w", err)
-	}
-
-	var config Config
-	config.port = viper.GetString("port")
-	config.staticfiles = viper.GetString("staticfiles")
-
-	router := httprouter.New()
-	router.GET("/", app.home)
-	router.GET("/hello/:name", app.home)
-	router.GET("/snippet", app.showSnippet)
-	router.POST("/snippet/create", app.createSnippet)
-
-	router.ServeFiles("/static/*filepath", http.Dir(config.staticfiles))
+	config := app.newConfig()
 
 	srv := &http.Server{
 		Addr:     config.port,
 		ErrorLog: errorLog,
-		Handler:  router,
+		Handler:  app.routes(config),
 	}
 
 	infoLog.Printf("Запуск веб-сервера на http://127.0.0.1%s", config.port)
