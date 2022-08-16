@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -11,7 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func home(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (app *application) home(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	filesHtml := []string{
 		"./ui/html/home.page.tmpl",
@@ -21,20 +20,18 @@ func home(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	homeTemplate, err := template.ParseFiles(filesHtml...)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 	}
 
 	err = homeTemplate.Execute(w, nil)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err)
 	}
 
 	fmt.Fprintf(w, "hello! time: %s", time.Now())
 }
 
-func showSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (app *application) showSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	idString := r.URL.Query().Get("id")
 	if len(idString) == 0 {
@@ -45,7 +42,7 @@ func showSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	idNumber, err := strconv.Atoi(idString)
 	if err != nil {
 		fmt.Fprintf(w, "Передан некорретный ID")
-		log.Println(err)
+		app.serverError(w, err)
 		return
 	}
 
@@ -53,7 +50,7 @@ func showSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 }
 
-func createSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (app *application) createSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	// fmt.Fprintf(w, "Должна создаваться заметка")
 	w.Header().Set("Content-Type", "application/json")

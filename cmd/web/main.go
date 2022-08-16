@@ -3,55 +3,64 @@ package main
 import (
 	"log"
 	"net/http"
-	"path/filepath"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/spf13/viper"
 )
 
-type neuteredFileSystem struct {
-	fs http.FileSystem
+type Config struct {
+	port        string
+	staticfiles string
+}
+
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
 }
 
 func main() {
 
+	f, err := os.OpenFile("info.log", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+	}
+
+	viper.SetConfigName("config")
+	viper.AddConfigPath("$Home/Projects/snippetbox")
+	err = viper.ReadInConfig()
+	if err != nil {
+		errorLog.Fatal("fatal error config file: %w", err)
+	}
+
+	var config Config
+	config.port = viper.GetString("port")
+	config.staticfiles = viper.GetString("staticfiles")
+
 	router := httprouter.New()
-	router.GET("/", home)
-	router.GET("/hello/:name", home)
-	router.GET("/snippet", showSnippet)
-	router.POST("/snippet/create", createSnippet)
+	router.GET("/", app.home)
+	router.GET("/hello/:name", app.home)
+	router.GET("/snippet", app.showSnippet)
+	router.POST("/snippet/create", app.createSnippet)
 
-	router.ServeFiles("/static/*filepath", http.Dir("./ui/static"))
+	router.ServeFiles("/static/*filepath", http.Dir(config.staticfiles))
 
-	log.Println("Запуск веб-сервера на http://127.0.0.1:4000")
-	err := http.ListenAndServe(":4000", router)
-	log.Fatal(err)
-}
-
-func (nfs *neuteredFileSystem) Open(path string) (http.File, error) {
-
-	file, err := nfs.fs.Open(path)
-	if err != nil {
-		return nil, err
+	srv := &http.Server{
+		Addr:     config.port,
+		ErrorLog: errorLog,
+		Handler:  router,
 	}
 
-	infoFile, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	if infoFile.IsDir() {
-
-		index := filepath.Join(path, "index.html")
-		if _, err := nfs.fs.Open(index); err != nil {
-			closeErr := file.Close()
-			if closeErr != nil {
-				return nil, closeErr
-			}
-
-			return nil, err
-		}
-
-	}
-
-	return file, nil
+	infoLog.Printf("Запуск веб-сервера на http://127.0.0.1%s", config.port)
+	err = srv.ListenAndServe()
+	errorLog.Fatal(err)
 }
