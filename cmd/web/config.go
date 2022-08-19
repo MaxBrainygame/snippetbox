@@ -1,24 +1,30 @@
 package main
 
-import "github.com/spf13/viper"
+import (
+	"log"
+
+	"github.com/spf13/viper"
+)
 
 type config struct {
 	port        string
 	staticfiles string
+	dsn         string
 }
 
-func (app *application) newConfig() *config {
+func newConfig(errorLog *log.Logger) *config {
 
 	viper.SetConfigName("config")
 	viper.AddConfigPath("$Home/Projects/snippetbox")
 	err := viper.ReadInConfig()
 	if err != nil {
-		app.errorLog.Fatal("fatal error config file: %w", err)
+		errorLog.Fatal("fatal error config file: %w", err)
 	}
 
 	var config config
 	config.port = viper.GetString("port")
 	config.staticfiles = viper.GetString("staticfiles")
+	config.dsn = viper.GetString("dsn")
 
 	return &config
 
