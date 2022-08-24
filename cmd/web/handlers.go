@@ -1,34 +1,52 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-	"text/template"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"golangify.com/snippetbox/pkg/models"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	filesHtml := []string{
-		"./ui/html/home.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
+	// filesHtml := []string{
+	// 	"./ui/html/home.page.tmpl",
+	// 	"./ui/html/base.layout.tmpl",
+	// 	"./ui/html/footer.partial.tmpl",
+	// }
 
-	homeTemplate, err := template.ParseFiles(filesHtml...)
+	// 	homeTemplate, err := template.ParseFiles(filesHtml...)
+	// 	if err != nil {
+	// 		app.serverError(w, err)
+	// 		return
+	// 	}
+	//
+	// 	err = homeTemplate.Execute(w, nil)
+	// 	if err != nil {
+	// 		app.serverError(w, err)
+	// 		return
+	// 	}
+	//
+	// 	fmt.Fprintf(w, "hello! time: %s", time.Now())
+
+	tables, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
 
-	err = homeTemplate.Execute(w, nil)
-	if err != nil {
-		app.serverError(w, err)
+	for _, table := range tables {
+
+		if table == nil {
+			continue
+		}
+
+		fmt.Fprintf(w, "%v\n", table)
 	}
 
-	fmt.Fprintf(w, "hello! time: %s", time.Now())
 }
 
 func (app *application) showSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -46,7 +64,18 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request, ps h
 		return
 	}
 
-	fmt.Fprintf(w, "Переданный ID=%d", idNumber)
+	tableSnippet, err := app.snippets.Get(idNumber)
+	if err != nil {
+
+		if errors.Is(err, models.ErrNoRecord) {
+			fmt.Fprintf(w, "%v", err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	fmt.Fprintf(w, "%v", tableSnippet)
 
 }
 
