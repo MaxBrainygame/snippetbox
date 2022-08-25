@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -72,6 +73,26 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request, ps h
 		} else {
 			app.serverError(w, err)
 		}
+		return
+	}
+
+	data := &templateData{Snippet: tableSnippet}
+
+	files := []string{
+		"./ui/html/show.page.tmpl",
+		"./ui/html/base.layout.tmpl",
+		"./ui/html/footer.partial.tmpl",
+	}
+
+	template, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = template.Execute(w, data)
+	if err != nil {
+		app.serverError(w, err)
 		return
 	}
 
