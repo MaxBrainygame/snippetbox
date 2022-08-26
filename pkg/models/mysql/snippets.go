@@ -70,7 +70,7 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 	}
 	defer sqlRows.Close()
 
-	var tablesSnippet = make([]*models.Snippet, 10)
+	var tablesSnippet []*models.Snippet
 
 	for sqlRows.Next() {
 

@@ -13,25 +13,17 @@ import (
 
 func (app *application) home(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	// filesHtml := []string{
-	// 	"./ui/html/home.page.tmpl",
-	// 	"./ui/html/base.layout.tmpl",
-	// 	"./ui/html/footer.partial.tmpl",
-	// }
+	filesHtml := []string{
+		"./ui/html/home.page.tmpl",
+		"./ui/html/base.layout.tmpl",
+		"./ui/html/footer.partial.tmpl",
+	}
 
-	// 	homeTemplate, err := template.ParseFiles(filesHtml...)
-	// 	if err != nil {
-	// 		app.serverError(w, err)
-	// 		return
-	// 	}
-	//
-	// 	err = homeTemplate.Execute(w, nil)
-	// 	if err != nil {
-	// 		app.serverError(w, err)
-	// 		return
-	// 	}
-	//
-	// 	fmt.Fprintf(w, "hello! time: %s", time.Now())
+	homeTemplate, err := template.ParseFiles(filesHtml...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
 	tables, err := app.snippets.Latest()
 	if err != nil {
@@ -39,13 +31,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	for _, table := range tables {
+	data := &templateData{Snippets: tables}
 
-		if table == nil {
-			continue
-		}
-
-		fmt.Fprintf(w, "%v\n", table)
+	err = homeTemplate.Execute(w, data)
+	if err != nil {
+		app.serverError(w, err)
+		return
 	}
 
 }
@@ -102,11 +93,13 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request, ps h
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	title := "История про улитку"
-	content := "Улитка выползла из раковины,\nвытянула рожки,\nи опять подобрала их."
-	expires := "7"
+	err := r.ParseForm()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(r.Form.Get("title"), r.Form.Get("content"), r.Form.Get("expires"))
 	if err != nil {
 		app.serverError(w, err)
 	}
