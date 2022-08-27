@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -13,18 +12,6 @@ import (
 
 func (app *application) home(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	filesHtml := []string{
-		"./ui/html/home.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
-
-	homeTemplate, err := template.ParseFiles(filesHtml...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
 	tables, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
@@ -33,11 +20,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request, ps httprout
 
 	data := &templateData{Snippets: tables}
 
-	err = homeTemplate.Execute(w, data)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	app.renderTemplate(w, "home.page.tmpl", data)
 
 }
 
@@ -69,25 +52,7 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request, ps h
 
 	data := &templateData{Snippet: tableSnippet}
 
-	files := []string{
-		"./ui/html/show.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
-
-	template, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	err = template.Execute(w, data)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	fmt.Fprintf(w, "%v", tableSnippet)
+	app.renderTemplate(w, "show.page.tmpl", data)
 
 }
 

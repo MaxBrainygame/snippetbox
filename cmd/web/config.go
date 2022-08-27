@@ -7,9 +7,10 @@ import (
 )
 
 type config struct {
-	port        string
-	staticfiles string
-	dsn         string
+	port             string
+	staticfiles      string
+	dsn              string
+	templateFilesDir string
 }
 
 func newConfig(errorLog *log.Logger) *config {
@@ -25,6 +26,7 @@ func newConfig(errorLog *log.Logger) *config {
 	config.port = viper.GetString("port")
 	config.staticfiles = viper.GetString("staticfiles")
 	config.dsn = viper.GetString("dsn")
+	config.templateFilesDir = viper.GetString("templateFilesDir")
 
 	return &config
 

@@ -1,3 +1,4 @@
 port: ":8080"
 staticfiles: "./ui/static"
+templateFilesDir: "./ui/html/"
 dsn: "web:vikabubka@tcp(localhost)/snippetbox?parseTime=true"
